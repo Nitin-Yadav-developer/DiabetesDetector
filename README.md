@@ -47,7 +47,7 @@ To run this project, you need Python 3.x and the libraries listed in `requiremen
 1.  **Clone the Repository (if applicable):**
     If you have cloned this project from a Git repository, navigate to the project directory.
     ```bash
-    git clone <repository_url>
+    git clone https://github.com/Nitin-Yadav-developer/DiabetesDetector.git
     cd diabetes-detector
     ```
 
