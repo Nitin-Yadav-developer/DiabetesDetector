@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes Risk Analysis - Interactive Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="dashboard-container">        <!-- Header Section -->
+        <header class="dashboard-header">
+            <h1>🏥 Diabetes Risk Analysis Dashboard</h1>            <p class="subtitle">Interactive Data Visualization & Insights for Clinical Decision Making | Real Pima Indians Dataset (768 patients)</p>
+            <div class="summary-stats" id="summaryStats">
+                <div class="stat-card">
+                    <h3>Total Patients</h3>
+                    <span class="stat-number" id="totalPatients">-</span>
+                </div>
+                <div class="stat-card diabetes">
+                    <h3>Diabetes Cases</h3>
+                    <span class="stat-number" id="diabetesCases">-</span>
+                </div>
+                <div class="stat-card risk">
+                    <h3>Prevalence Rate</h3>
+                    <span class="stat-number" id="prevalenceRate">-</span>
+                </div>
+                <div class="stat-card age">
+                    <h3>Avg Age</h3>
+                    <span class="stat-number" id="avgAge">-</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Interactive Controls -->
+        <div class="controls-section">
+            <div class="filter-controls">
+                <div class="control-group">
+                    <label for="ageFilter">Age Group Filter:</label>
+                    <select id="ageFilter" onchange="updateCharts()">
+                        <option value="all">All Ages</option>
+                        <option value="young">Young (21-30)</option>
+                        <option value="middle">Middle (31-50)</option>
+                        <option value="older">Older (51+)</option>
+                    </select>
+                </div>                <div class="control-group">
+                    <label for="bmiFilter">BMI Category:</label>
+                    <select id="bmiFilter" onchange="updateCharts()">
+                        <option value="all">All BMI Categories</option>
+                        <option value="underweight">Underweight (&lt; 18.5)</option>
+                        <option value="normal">Normal (18.5-24.9)</option>
+                        <option value="overweight">Overweight (25-29.9)</option>
+                        <option value="obese">Obese (30+)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="featureSelect">Focus Feature:</label>
+                    <select id="featureSelect" onchange="updateScatterPlot()">
+                        <option value="Glucose">Glucose Level</option>
+                        <option value="BMI">Body Mass Index</option>
+                        <option value="BloodPressure">Blood Pressure</option>
+                        <option value="Insulin">Insulin Level</option>
+                        <option value="Age">Age</option>
+                    </select>
+                </div>
+                <button class="reset-btn" onclick="resetFilters()">Reset All Filters</button>
+            </div>
+        </div>        <!-- Main Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Row 1: Interactive Feature Analysis (MOVED TO FIRST POSITION) -->            <div class="chart-container wide">
+                <div class="chart-header">
+                    <h2>🔍 Interactive Feature Analysis</h2>
+                    <p class="chart-description">🎯 <strong>PRIMARY INTERACTIVE CHART:</strong> Use the Focus Feature filter above to explore different relationships - This chart responds to all filters!</p>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="riskScatterPlot"></canvas>
+                </div>
+                <div class="risk-legend">
+                    <div class="legend-item low-risk">Low Risk</div>
+                    <div class="legend-item medium-risk">Medium Risk</div>
+                    <div class="legend-item high-risk">High Risk</div>
+                </div>
+            </div>
+
+            <!-- Row 2: Primary Distribution Insights -->            
+            <div class="chart-container large">
+                <div class="chart-header">
+                    <h2>🎯 Diabetes Distribution by Risk Factors</h2>
+                    <p class="chart-description">Interactive pie chart showing diabetes prevalence across different patient categories</p>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="diabetesDistributionChart"></canvas>
+                </div>
+                <div class="chart-insights" id="distributionInsights">
+                    <h4>Key Insights:</h4>
+                    <ul id="distributionInsightsList"></ul>
+                </div>
+            </div>
+
+            <div class="chart-container large">
+                <div class="chart-header">
+                    <h2>📊 Feature Correlation Matrix</h2>
+                    <p class="chart-description">Interactive heatmap showing relationships between diabetes risk factors</p>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="correlationMatrix"></canvas>
+                </div>
+                <div class="chart-insights" id="correlationInsights">
+                    <h4>Correlation Analysis:</h4>
+                    <ul id="correlationInsightsList"></ul>
+                </div>
+            </div>            <!-- Row 3: Age & Clinical Analysis -->
+            <div class="chart-container medium">
+                <div class="chart-header">
+                    <h2>📈 Age Group Analysis</h2>
+                    <p class="chart-description">Diabetes prevalence by age groups with trend analysis</p>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="ageAnalysisChart"></canvas>
+                </div>
+                <div class="trend-indicator" id="ageTrend">
+                    <span>Trend: <strong id="ageTrendText">-</strong></span>
+                </div>
+            </div>
+
+            <div class="chart-container wide">
+                <div class="chart-header">
+                    <h2>🏥 Clinical Thresholds Dashboard</h2>
+                    <p class="chart-description">Interactive bar chart with medical reference ranges</p>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="clinicalThresholdsChart"></canvas>
+                </div>
+                <div class="threshold-info">
+                    <div class="threshold-item">
+                        <span class="threshold-label">Normal Glucose:</span>
+                        <span class="threshold-value">&lt; 100 mg/dL</span>
+                    </div>
+                    <div class="threshold-item">
+                        <span class="threshold-label">Prediabetic:</span>
+                        <span class="threshold-value">100-125 mg/dL</span>
+                    </div>
+                    <div class="threshold-item">
+                        <span class="threshold-label">Diabetic:</span>
+                        <span class="threshold-value">&gt; 125 mg/dL</span>
+                    </div>
+                </div>
+            </div>            <!-- Row 4: Predictive Insights -->
+            <div class="chart-container risk-model">
+                <div class="chart-header">
+                    <h2>⚡ Risk Prediction Model</h2>
+                    <p class="chart-description">Interactive risk calculator based on multiple factors</p>
+                </div>
+                <div class="risk-calculator">
+                    <div class="calculator-inputs">
+                        <div class="input-group">
+                            <label>Glucose (mg/dL):</label>
+                            <input type="range" id="glucoseInput" min="50" max="200" value="100" oninput="updateRiskCalculator()">
+                            <span id="glucoseValue">100</span>
+                        </div>
+                        <div class="input-group">
+                            <label>BMI:</label>
+                            <input type="range" id="bmiInput" min="15" max="50" value="25" oninput="updateRiskCalculator()">
+                            <span id="bmiValue">25</span>
+                        </div>
+                        <div class="input-group">
+                            <label>Age:</label>
+                            <input type="range" id="ageInput" min="21" max="80" value="35" oninput="updateRiskCalculator()">
+                            <span id="ageValue">35</span>
+                        </div>
+                    </div>                    <div class="risk-result">
+                        <div class="risk-text">
+                            <h3>Diabetes Risk:</h3>
+                            <span class="risk-percentage" id="riskPercentage">-</span>
+                            <p class="risk-category" id="riskCategory">-</p>
+                        </div>
+                        <div class="risk-gauge" id="riskGauge">
+                            <div class="chart-wrapper">
+                                <canvas id="riskGaugeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>            <div class="chart-container medium">
+                <div class="chart-header">
+                    <h2>🎨 Feature Importance</h2>
+                    <p class="chart-description">Relative importance of each factor in diabetes prediction</p>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="featureImportanceChart"></canvas>
+                </div>
+                <div class="importance-ranking" id="importanceRanking"></div>
+            </div>            <div class="chart-container large violin-chart">
+                <div class="chart-header">
+                    <h2> Glucose Distribution </h2>
+                    <p class="chart-description">Distribution density comparison between diabetic and non-diabetic patients</p>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="violinPlotChart"></canvas>
+                </div>
+                <div class="violin-insights" id="violinInsights">
+                    <h4>Distribution Analysis:</h4>
+                    <ul id="violinInsightsList"></ul>
+                </div>
+            </div>
+        </div>        <!-- Data Storytelling Section -->
+        <div class="storytelling-section">
+            <h2>📚 Data Story: Real-World Diabetes Risk Patterns</h2>
+            <div class="story-content">
+                <div class="story-chapter" id="chapter1">
+                    <h3>Chapter 1: The Glucose Connection (Real Data Insights)</h3>
+                    <p>Analysis of the actual Pima Indians dataset reveals that <strong>glucose level is the strongest predictor</strong> of diabetes risk. Real patient data shows clear threshold effects, with dramatic risk increases above clinical cutpoints.</p>
+                    <div class="story-highlight">
+                        <span class="highlight-number" id="realGlucoseStat">Loading...</span>
+                        <span class="highlight-text">of diabetic patients in the real dataset have elevated glucose levels</span>
+                    </div>
+                </div>
+                
+                <div class="story-chapter" id="chapter2">
+                    <h3>Chapter 2: Age Patterns in Real Patients</h3>
+                    <p>The actual dataset demonstrates how age correlates with diabetes onset in this specific population. Real-world data provides more nuanced insights than theoretical models.</p>
+                    <div class="story-highlight">
+                        <span class="highlight-number" id="realAgeStat">Loading...</span>
+                        <span class="highlight-text">average age of diabetic patients in the dataset</span>
+                    </div>
+                </div>
+                
+                <div class="story-chapter" id="chapter3">
+                    <h3>Chapter 3: BMI Reality in Clinical Data</h3>
+                    <p>Real patient BMI data reveals the complex relationship between weight and diabetes. The actual distribution shows how clinical thresholds apply to real populations.</p>
+                    <div class="story-highlight">
+                        <span class="highlight-number" id="realBMIStat">Loading...</span>
+                        <span class="highlight-text">average BMI of patients with diabetes in the real dataset</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations Section -->
+        <div class="recommendations-section">
+            <h2>🎯 Clinical Recommendations</h2>
+            <div class="recommendations-grid">
+                <div class="recommendation-card high-priority">
+                    <h3>🚨 High Priority Screening</h3>
+                    <ul>
+                        <li>Patients with glucose > 125 mg/dL</li>
+                        <li>BMI > 30 with family history</li>
+                        <li>Age > 45 with additional risk factors</li>
+                    </ul>
+                    <div class="action-btn">Schedule Immediate Follow-up</div>
+                </div>
+                
+                <div class="recommendation-card medium-priority">
+                    <h3>⚠️ Regular Monitoring</h3>
+                    <ul>
+                        <li>Glucose 100-125 mg/dL (prediabetic range)</li>
+                        <li>BMI 25-30 with sedentary lifestyle</li>
+                        <li>Age 35-45 with metabolic syndrome</li>
+                    </ul>
+                    <div class="action-btn">Annual Screening</div>
+                </div>
+                
+                <div class="recommendation-card prevention">
+                    <h3>💚 Prevention Focus</h3>
+                    <ul>
+                        <li>Lifestyle modification counseling</li>
+                        <li>Weight management programs</li>
+                        <li>Regular exercise promotion</li>
+                    </ul>
+                    <div class="action-btn">Preventive Education</div>
+                </div>
+            </div>
+        </div>        <!-- Footer -->
+        <footer class="dashboard-footer">
+            <p>Data Source: Real Pima Indians Diabetes Dataset (CSV) | 768 Patient Records | Interactive Dashboard powered by Chart.js</p>
+            <div class="export-options">
+                <button onclick="exportDashboard()" class="export-btn">📊 Export Report</button>
+                <button onclick="printDashboard()" class="export-btn">🖨️ Print Dashboard</button>
+            </div>
+        </footer>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
